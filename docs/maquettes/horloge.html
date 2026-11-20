@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Maquettes · Horloge</title>
+  <link rel="stylesheet" href="maquettes.css" />
+</head>
+<body>
+  <nav>
+    <a href="index.html">Vue d'ensemble</a>
+    <a href="carte.html">Carte</a>
+    <a href="horloge.html" aria-current="page">Horloge</a>
+    <a href="contextes.html">Contextes</a>
+    <a href="artistes.html">Artistes</a>
+    <a href="frise.html">Frise</a>
+  </nav>
+
+  <h1>Horloge d'écoute</h1>
+  <p class="intro">
+    Tâche : repérer les rythmes heure × jour, et la part de l'écoute faite en mouvement à chaque
+    heure. Sa position sert aussi d'horloge commune aux comètes de la carte.
+  </p>
+
+  <div class="variantes">
+    <article class="variante">
+      <p class="etiquette">Écartée</p>
+      <h3>A. Grille 7 × 24</h3>
+      <svg id="grille" viewBox="0 0 400 200" role="img" aria-label="Grille jours par heures en niveaux de gris"></svg>
+      <p>Encodage : une case par jour et par heure, luminance = temps d'écoute.</p>
+      <p>Lisible, mais minuit tombe aux deux bords : une soirée qui déborde sur 1 h se retrouve
+        coupée en deux.</p>
+    </article>
+
+    <article class="variante">
+      <p class="etiquette">Écartée</p>
+      <h3>B. Une courbe par jour</h3>
+      <svg id="courbes" viewBox="0 0 400 200" role="img" aria-label="Sept courbes superposées"></svg>
+      <p>Encodage : temps d'écoute par heure, sept courbes superposées.</p>
+      <p>Les courbes se croisent sans cesse et le week-end ne ressort pas.</p>
+    </article>
+
+    <article class="variante retenue">
+      <p class="etiquette">Retenue</p>
+      <h3>C. Vinyle</h3>
+      <svg id="vinyle" viewBox="-20 -14 360 348" role="img" aria-label="Anneaux concentriques par jour, angle par heure, couronne de barres"></svg>
+      <p>Encodage : angle = heure (minuit en haut), anneau = jour (lundi au centre), luminance =
+        temps d'écoute. La couronne donne, en longueur, la part en mouvement par heure.</p>
+      <p>Le cycle reste fermé. Les cases extérieures sont plus grandes que les intérieures :
+        le survol donne la valeur exacte.</p>
+    </article>
+  </div>
+
+  <script src="maquettes.js"></script>
+  <script>
+    const { C, el, gris, secteur, chemin } = M
+    const JOURS = ['lun', 'mar', 'mer', 'jeu', 'ven', 'sam', 'dim']
+    const HEURES = Array.from({ length: 24 }, (_, h) => h)
+    const cloche = (x, centre, largeur) => Math.exp(-((x - centre) ** 2) / (2 * largeur * largeur))
+
+    // Écoute inventée : creux la nuit, pics le matin, à midi et en fin d'après-midi ;
+    // week-end décalé de 2 h, et un peu de variation d'un jour à l'autre
+    function ecoute(jour, heure) {
+      const h = jour >= 5 ? heure - 2 : heure
+      const base = 0.05 + 0.7 * cloche(h, 8, 1.2) + 0.45 * cloche(h, 12.5, 1.5) + 0.9 * cloche(h, 17.5, 2) + 0.35 * cloche(heure, 23, 1.5)
+      const variation = 0.15 * Math.sin(jour * 1.9 + heure / 2.5) * Math.min(1, base * 3)
+      return Math.max(0, Math.min(1, base + variation))
+    }
+    const enMouvement = (heure) => 0.1 + 0.5 * cloche(heure, 8, 1.3) + 0.45 * cloche(heure, 17.5, 1.5)
+
+    // A. Grille 7 × 24, les deux bords de minuit soulignés
+    {
+      const s = document.getElementById('grille')
+      const x0 = 40, y0 = 24, l = 14, h = 20
+      JOURS.forEach((jour, j) => {
+        el(s, 'text', { x: x0 - 8, y: y0 + j * h + 14, 'font-size': 10, fill: C.texte, 'text-anchor': 'end' }, jour)
+        for (const heure of HEURES) {
+          el(s, 'rect', { x: x0 + heure * l, y: y0 + j * h, width: l - 1, height: h - 1, fill: gris(ecoute(j, heure)) })
+        }
+      })
+      for (const heure of [0, 6, 12, 18, 23]) {
+        el(s, 'text', { x: x0 + heure * l + l / 2, y: y0 + 7 * h + 14, 'font-size': 10, fill: C.texte, 'text-anchor': 'middle' }, `${heure} h`)
+      }
+      for (const heure of [0, 23]) {
+        el(s, 'rect', { x: x0 + heure * l - 1, y: y0 - 2, width: l + 1, height: 7 * h + 3, fill: 'none', stroke: C.accent, 'stroke-width': 1.5 })
+      }
+      el(s, 'text', { x: 200, y: 190, 'font-size': 10, fill: C.accent, 'text-anchor': 'middle' }, 'minuit : 23 h et 0 h aux deux bouts')
+    }
+
+    // B. Sept courbes
+    {
+      const s = document.getElementById('courbes')
+      const x = (heure) => 40 + heure * 14.5
+      const y = (v) => 170 - v * 140
+      el(s, 'line', { x1: 40, y1: 170, x2: 375, y2: 170, stroke: C.trait })
+      JOURS.forEach((_, j) => {
+        const points = HEURES.map((heure) => ({ x: x(heure), y: y(ecoute(j, heure)) }))
+        el(s, 'path', { d: chemin(points), fill: 'none', stroke: C.marque, 'stroke-width': 1.2, opacity: 0.7 })
+      })
+      for (const heure of [0, 6, 12, 18, 23]) {
+        el(s, 'text', { x: x(heure), y: 186, 'font-size': 10, fill: C.texte, 'text-anchor': 'middle' }, `${heure} h`)
+      }
+    }
+
+    // C. Vinyle : anneaux par jour, couronne de la part en mouvement
+    {
+      const s = document.getElementById('vinyle')
+      const cx = 160, cy = 160, centre = 34, anneau = 13, pas = (2 * Math.PI) / 24
+      JOURS.forEach((_, j) => {
+        for (const heure of HEURES) {
+          const r0 = centre + j * anneau
+          el(s, 'path', { d: secteur(cx, cy, r0, r0 + anneau - 1, heure * pas, (heure + 1) * pas), fill: gris(ecoute(j, heure)), stroke: '#fff', 'stroke-width': 0.6 })
+        }
+      })
+      const couronne = centre + 7 * anneau + 6
+      el(s, 'circle', { cx, cy, r: couronne + 18, fill: 'none', stroke: C.clair, 'stroke-dasharray': '2 3' })
+      for (const heure of HEURES) {
+        el(s, 'path', { d: secteur(cx, cy, couronne, couronne + enMouvement(heure) * 30, heure * pas + 0.03, (heure + 1) * pas - 0.03), fill: C.accent, opacity: 0.85 })
+      }
+      el(s, 'text', { x: cx, y: cy - 2, 'font-size': 12, fill: C.texte, 'text-anchor': 'middle' }, '07:59')
+      el(s, 'text', { x: cx, y: cy + 12, 'font-size': 8, fill: C.clair, 'text-anchor': 'middle' }, 'journée type')
+      const etiquettes = [[0, '0 h'], [6, '6 h'], [12, '12 h'], [18, '18 h']]
+      for (const [heure, texte] of etiquettes) {
+        const a = heure * pas
+        el(s, 'text', { x: cx + 152 * Math.sin(a), y: cy - 152 * Math.cos(a) + 4, 'font-size': 10, fill: C.texte, 'text-anchor': 'middle' }, texte)
+      }
+      // Aiguille à 8 h, partagée avec la carte et la frise
+      const aiguille = 8 * pas
+      el(s, 'line', { x1: cx + centre * Math.sin(aiguille), y1: cy - centre * Math.cos(aiguille), x2: cx + 140 * Math.sin(aiguille), y2: cy - 140 * Math.cos(aiguille), stroke: '#222', 'stroke-width': 1 })
+    }
+  </script>
+</body>
+</html>

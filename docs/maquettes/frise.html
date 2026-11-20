@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Maquettes · Frise</title>
+  <link rel="stylesheet" href="maquettes.css" />
+</head>
+<body>
+  <nav>
+    <a href="index.html">Vue d'ensemble</a>
+    <a href="carte.html">Carte</a>
+    <a href="horloge.html">Horloge</a>
+    <a href="contextes.html">Contextes</a>
+    <a href="artistes.html">Artistes</a>
+    <a href="frise.html" aria-current="page">Frise</a>
+  </nav>
+
+  <h1>Frise</h1>
+  <p class="intro">
+    Tâche : voir les cinq ans d'un coup, choisir une période, puis rejouer un jour ou un voyage.
+    La frise reste en bas de l'écran et filtre toutes les autres vues.
+  </p>
+
+  <div class="variantes">
+    <article class="variante">
+      <p class="etiquette">Écartée</p>
+      <h3>A. Heures localisées par mois</h3>
+      <svg id="mois" viewBox="0 0 600 170" role="img" aria-label="Barres mensuelles, vides en 2024"></svg>
+      <p>Encodage : barres des heures d'écoute rattachées à un lieu.</p>
+      <p>En 2024, Timeline est vide : les barres tombent à zéro et l'année se lit comme une année
+        sans musique.</p>
+    </article>
+
+    <article class="variante retenue">
+      <p class="etiquette">Retenue</p>
+      <h3>B. Aire, voyages et couverture</h3>
+      <svg id="frise" viewBox="0 0 600 170" role="img" aria-label="Aire d'écoute, couloir des voyages, bande de couverture hachurée en 2024"></svg>
+      <p>Encodage : aire = heures d'écoute par jour (moyenne sur 7 jours). Au-dessus, les voyages
+        en rectangles ; en dessous, la couverture Timeline, hachurée là où elle manque.</p>
+      <p>Glisser sélectionne une période, un clic rejoue un jour, un double-clic revient à tout.
+        La lacune de 2024 reste visible comme une absence de mesure.</p>
+    </article>
+  </div>
+
+  <script src="maquettes.js"></script>
+  <script>
+    const { C, el, alea, chemin } = M
+    const r = alea(5)
+    const SEMAINES = 261
+    const ANNEES = [2022, 2023, 2024, 2025, 2026]
+    const DEBUT_2022 = 13
+    const x = (semaine) => 20 + (semaine / SEMAINES) * 560
+    const annee = (s) => Math.floor((s - DEBUT_2022) / 52.2)
+
+    // Écoute hebdomadaire inventée et couverture Timeline : pleine, vide en 2024, partielle ensuite
+    const ecoute = Array.from({ length: SEMAINES }, (_, s) => 7 + 3 * Math.sin(s / 9) + r() * 4)
+    const couverture = ecoute.map((_, s) => (annee(s) === 2 ? 0 : annee(s) >= 3 ? 0.55 + r() * 0.3 : 0.9 + r() * 0.1))
+
+    function axe(s) {
+      ANNEES.forEach((a, i) => {
+        const pos = x(DEBUT_2022 + i * 52.2)
+        el(s, 'line', { x1: pos, y1: 148, x2: pos, y2: 153, stroke: C.clair })
+        el(s, 'text', { x: pos + 4, y: 164, 'font-size': 10, fill: C.texte }, a)
+      })
+    }
+
+    // A. Barres mensuelles de l'écoute localisée
+    {
+      const s = document.getElementById('mois')
+      for (let m = 0; m < SEMAINES / 4.35; m++) {
+        const semaines = ecoute.slice(Math.round(m * 4.35), Math.round((m + 1) * 4.35))
+        const localise = semaines.reduce((t, v, k) => t + v * couverture[Math.round(m * 4.35) + k], 0)
+        const h = localise * 2.4
+        el(s, 'rect', { x: x(m * 4.35), y: 146 - h, width: 7, height: h, fill: C.marque })
+      }
+      el(s, 'line', { x1: 20, y1: 146, x2: 580, y2: 146, stroke: C.marque })
+      axe(s)
+    }
+
+    // B. Aire d'écoute, couloir des voyages, bande de couverture, sélection en cours
+    {
+      const s = document.getElementById('frise')
+      const motif = el(el(s, 'defs'), 'pattern', { id: 'hachures', width: 5, height: 5, patternUnits: 'userSpaceOnUse', patternTransform: 'rotate(45)' })
+      el(motif, 'line', { x1: 0, y1: 0, x2: 0, y2: 5, stroke: C.clair, 'stroke-width': 1.5 })
+
+      for (const [debut, duree] of [[30, 2], [70, 1], [96, 3], [180, 2], [214, 1], [240, 2]]) {
+        el(s, 'rect', { x: x(debut), y: 8, width: Math.max(4, x(debut + duree) - x(debut)), height: 10, rx: 2, fill: debut === 180 ? C.accent : C.clair })
+      }
+
+      const y = (v) => 118 - v * 6.5
+      const lisse = ecoute.map((_, s) => ecoute.slice(Math.max(0, s - 1), s + 2).reduce((a, b) => a + b, 0) / 3)
+      const contour = lisse.map((v, s) => ({ x: x(s), y: y(v) }))
+      el(s, 'path', { d: `${chemin(contour)} L${x(SEMAINES - 1)} 118 L${x(0)} 118 Z`, fill: C.pale, stroke: C.marque, 'stroke-width': 1 })
+
+      couverture.forEach((c, i) => {
+        el(s, 'rect', { x: x(i), y: 126, width: 560 / SEMAINES + 0.3, height: 10, fill: c === 0 ? 'url(#hachures)' : C.marque, opacity: c === 0 ? 1 : c })
+      })
+      el(s, 'text', { x: x(DEBUT_2022 + 2.5 * 52.2), y: 30, 'font-size': 10, fill: C.texte, 'text-anchor': 'middle' }, 'Timeline perdue')
+
+      el(s, 'rect', { x: x(160), y: 4, width: x(200) - x(160), height: 136, fill: C.accent, 'fill-opacity': 0.07, stroke: C.accent })
+      el(s, 'text', { x: x(180), y: 146, 'font-size': 9, fill: C.accent, 'text-anchor': 'middle' }, 'période sélectionnée')
+      axe(s)
+    }
+  </script>
+</body>
+</html>

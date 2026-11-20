@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Maquettes · Contextes</title>
+  <link rel="stylesheet" href="maquettes.css" />
+</head>
+<body>
+  <nav>
+    <a href="index.html">Vue d'ensemble</a>
+    <a href="carte.html">Carte</a>
+    <a href="horloge.html">Horloge</a>
+    <a href="contextes.html" aria-current="page">Contextes</a>
+    <a href="artistes.html">Artistes</a>
+    <a href="frise.html">Frise</a>
+  </nav>
+
+  <h1>En mouvement ou à l'arrêt ?</h1>
+  <p class="intro">
+    Tâche : comparer la manière d'écouter selon le contexte (à l'arrêt, voiture, bus, train, vélo)
+    sur trois mesures : part de morceaux passés, écoute médiane, diversité des artistes.
+    La diversité est raréfiée (artistes distincts attendus sur 50 écoutes), sinon le contexte le
+    plus fréquent gagne d'office.
+  </p>
+
+  <div class="variantes">
+    <article class="variante">
+      <p class="etiquette">Écartée</p>
+      <h3>A. Barres groupées</h3>
+      <svg id="barres" viewBox="0 0 400 220" role="img" aria-label="Trois barres par contexte"></svg>
+      <p>Encodage : trois barres par contexte, chacune sur sa propre échelle.</p>
+      <p>Les barres partent de zéro, donc des écarts de quelques points disparaissent. Les trois
+        échelles se mélangent dans un même groupe.</p>
+    </article>
+
+    <article class="variante">
+      <p class="etiquette">Écartée</p>
+      <h3>B. Radar</h3>
+      <svg id="radar" viewBox="0 0 400 220" role="img" aria-label="Polygones superposés sur trois axes"></svg>
+      <p>Encodage : un polygone par contexte sur trois axes.</p>
+      <p>Nous lisons des aires et des angles. Avec cinq polygones superposés, plus rien ne se compare.</p>
+    </article>
+
+    <article class="variante retenue">
+      <p class="etiquette">Retenue</p>
+      <h3>C. Points alignés en petits multiples</h3>
+      <svg id="points" viewBox="0 0 400 220" role="img" aria-label="Une ligne par contexte, un point par mesure"></svg>
+      <p>Encodage : une ligne par contexte, une colonne par mesure, position sur une échelle
+        commune. Le pointillé rappelle la valeur à l'arrêt. Un point creux signale moins de 100 écoutes.</p>
+      <p>Les positions alignées sont le canal le plus précis, et l'échelle n'a pas besoin de partir de zéro.</p>
+    </article>
+  </div>
+
+  <script src="maquettes.js"></script>
+  <script>
+    const { C, el } = M
+    const CONTEXTES = [
+      { nom: "À l'arrêt", n: 30900, passes: 0.52, mediane: 46, diversite: 44 },
+      { nom: 'Voiture', n: 6000, passes: 0.55, mediane: 37, diversite: 43 },
+      { nom: 'Bus', n: 3400, passes: 0.63, mediane: 24, diversite: 41 },
+      { nom: 'Train', n: 1980, passes: 0.66, mediane: 11, diversite: 42 },
+      { nom: 'Vélo', n: 90, passes: 0.58, mediane: 20, diversite: 38 },
+    ]
+    const MESURES = [
+      { cle: 'passes', titre: 'Passés', min: 0.4, max: 0.7, bornes: ['40 %', '70 %'] },
+      { cle: 'mediane', titre: 'Écoute médiane', min: 0, max: 60, bornes: ['0 s', '60 s'] },
+      { cle: 'diversite', titre: 'Diversité', min: 35, max: 50, bornes: ['35', '50'] },
+    ]
+    const TEINTES = [C.marque, C.clair, C.pale]
+    const part = (m, v) => (v - m.min) / (m.max - m.min)
+    const texte = (s, x, y, contenu, attrs = {}) => el(s, 'text', { x, y, 'font-size': 10, fill: C.texte, ...attrs }, contenu)
+
+    // A. Barres groupées depuis zéro
+    {
+      const s = document.getElementById('barres')
+      const base = 180
+      CONTEXTES.forEach((c, i) => {
+        const x = 30 + i * 74
+        MESURES.forEach((m, k) => {
+          const hauteur = (c[m.cle] / m.max) * 140
+          el(s, 'rect', { x: x + k * 18, y: base - hauteur, width: 16, height: hauteur, fill: TEINTES[k] })
+        })
+        texte(s, x + 26, base + 16, c.nom, { 'text-anchor': 'middle' })
+      })
+      el(s, 'line', { x1: 20, y1: base, x2: 390, y2: base, stroke: C.marque })
+      MESURES.forEach((m, k) => {
+        el(s, 'rect', { x: 30 + k * 110, y: 8, width: 10, height: 10, fill: TEINTES[k] })
+        texte(s, 44 + k * 110, 17, m.titre)
+      })
+    }
+
+    // B. Radar à trois axes
+    {
+      const s = document.getElementById('radar')
+      const cx = 200, cy = 118, r = 86
+      const angle = (k) => (k * 2 * Math.PI) / 3
+      MESURES.forEach((m, k) => {
+        el(s, 'line', { x1: cx, y1: cy, x2: cx + r * Math.sin(angle(k)), y2: cy - r * Math.cos(angle(k)), stroke: C.trait })
+        texte(s, cx + (r + 14) * Math.sin(angle(k)), cy - (r + 8) * Math.cos(angle(k)), m.titre, { 'text-anchor': 'middle' })
+      })
+      for (const c of CONTEXTES) {
+        const points = MESURES.map((m, k) => {
+          const d = r * (0.15 + 0.85 * part(m, c[m.cle]))
+          return `${cx + d * Math.sin(angle(k))},${cy - d * Math.cos(angle(k))}`
+        })
+        el(s, 'polygon', { points: points.join(' '), fill: C.marque, 'fill-opacity': 0.08, stroke: C.marque, 'stroke-width': 1 })
+      }
+    }
+
+    // C. Points alignés : une colonne par mesure, référence « à l'arrêt » en pointillé
+    {
+      const s = document.getElementById('points')
+      const largeur = 82, x0 = 136, y0 = 64, pas = 30
+      const arret = CONTEXTES[0]
+      MESURES.forEach((m, k) => {
+        const gauche = x0 + k * (largeur + 6)
+        const x = (v) => gauche + part(m, v) * largeur
+        texte(s, gauche + largeur / 2, 22, m.titre, { 'text-anchor': 'middle', fill: '#222' })
+        texte(s, gauche, 38, m.bornes[0], { 'font-size': 8, fill: C.clair })
+        texte(s, gauche + largeur, 38, m.bornes[1], { 'font-size': 8, fill: C.clair, 'text-anchor': 'end' })
+        el(s, 'line', { x1: gauche, y1: 44, x2: gauche + largeur, y2: 44, stroke: C.trait })
+        el(s, 'line', { x1: x(arret[m.cle]), y1: 48, x2: x(arret[m.cle]), y2: y0 + 4 * pas + 8, stroke: C.clair, 'stroke-dasharray': '2 3' })
+        CONTEXTES.forEach((c, i) => {
+          const creux = c.n < 100
+          el(s, 'circle', { cx: x(c[m.cle]), cy: y0 + i * pas, r: 4.5, fill: creux ? '#fff' : C.marque, stroke: C.marque, 'stroke-width': 1.4 })
+        })
+      })
+      CONTEXTES.forEach((c, i) => {
+        texte(s, 8, y0 + i * pas + 4, c.nom, { 'font-size': 11, fill: '#222' })
+        texte(s, 122, y0 + i * pas + 4, c.n.toLocaleString('fr-CH'), { 'font-size': 9, fill: C.clair, 'text-anchor': 'end' })
+      })
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,118 @@
+:root {
+  --encre: #222;
+  --doux: #666;
+  --gris: #8a8a8a;
+  --bord: #dddad3;
+  --fond: #f7f6f2;
+  --carte: #fff;
+  --accent: #d9480f;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0 auto;
+  max-width: 1200px;
+  padding: 28px 16px 64px;
+  font: 15px/1.5 system-ui, -apple-system, 'Segoe UI', sans-serif;
+  color: var(--encre);
+  background: var(--fond);
+}
+
+nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  margin-bottom: 24px;
+  font-size: 14px;
+}
+
+nav a {
+  color: var(--doux);
+}
+
+nav a[aria-current='page'] {
+  color: var(--encre);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+h1 {
+  margin: 0 0 6px;
+  font-size: 28px;
+}
+
+h2 {
+  margin: 36px 0 4px;
+  font-size: 20px;
+}
+
+h3 {
+  margin: 0 0 10px;
+  font-size: 16px;
+}
+
+.intro {
+  max-width: 70ch;
+  margin: 0;
+  color: var(--doux);
+}
+
+.variantes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+  margin-top: 16px;
+}
+
+.variante {
+  padding: 16px;
+  background: var(--carte);
+  border: 1px solid var(--bord);
+  border-radius: 8px;
+}
+
+.variante.retenue {
+  border: 2px solid var(--accent);
+}
+
+.etiquette {
+  margin: 0 0 4px;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--gris);
+}
+
+.retenue .etiquette {
+  color: var(--accent);
+}
+
+.variante svg,
+.ecran {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 4px;
+}
+
+.variante p {
+  margin: 10px 0 0;
+  font-size: 14px;
+}
+
+.pages {
+  padding-left: 20px;
+}
+
+.pages li {
+  margin: 4px 0;
+}
+
+@media print {
+  nav {
+    display: none;
+  }
+}

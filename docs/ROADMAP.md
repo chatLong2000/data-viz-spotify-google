@@ -9,22 +9,22 @@ Chaque étape donne un commit.
 - Exploration Spotify (`notebooks/01-spotify.py`)
 - Exploration Timeline (`notebooks/02-timeline.py`)
 - Cadrage : question, tâches, données ([CADRAGE.md](CADRAGE.md))
+- Maquettes : variantes comparées pour chaque vue ([maquettes/index.html](maquettes/index.html))
 
 ## À faire
 
-1. Maquettes des vues
-2. Pipeline : lecture des exports
-3. Pipeline : jointure écoutes et positions
-4. Pipeline : lieux et zones sensibles
-5. Pipeline : trajets et voyages
-6. Pipeline : export et audit de confidentialité
-7. App : socle et décodage
-8. App : en-tête
-9. App : carte
-10. App : horloge, petits multiples, artistes
-11. App : frise, replay, voyages
-12. Documentation
-13. Tests de bout en bout
+1. Pipeline : lecture des exports
+2. Pipeline : jointure écoutes et positions
+3. Pipeline : lieux et zones sensibles
+4. Pipeline : trajets et voyages
+5. Pipeline : export et audit de confidentialité
+6. App : socle et décodage
+7. App : en-tête
+8. App : carte
+9. App : horloge, petits multiples, artistes
+10. App : frise, replay, voyages
+11. Documentation
+12. Tests de bout en bout
 
 ## Règles
 

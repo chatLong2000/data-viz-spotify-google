@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Maquettes · Artistes</title>
+  <link rel="stylesheet" href="maquettes.css" />
+</head>
+<body>
+  <nav>
+    <a href="index.html">Vue d'ensemble</a>
+    <a href="carte.html">Carte</a>
+    <a href="horloge.html">Horloge</a>
+    <a href="contextes.html">Contextes</a>
+    <a href="artistes.html" aria-current="page">Artistes</a>
+    <a href="frise.html">Frise</a>
+  </nav>
+
+  <h1>Artistes</h1>
+  <p class="intro">
+    Tâche : savoir qui on écoute, et choisir quels artistes colorer sur la carte. L'exploration
+    Spotify compte plus de 5 500 artistes ; le premier pèse 3 % du temps d'écoute et le top 10, 16 %.
+  </p>
+
+  <div class="variantes">
+    <article class="variante">
+      <p class="etiquette">Écartée</p>
+      <h3>A. Une couleur par artiste du top 10</h3>
+      <svg id="dix-couleurs" viewBox="0 0 400 260" role="img" aria-label="Carte avec dix couleurs d'artistes"></svg>
+      <p>Encodage : teinte = artiste dominant, pour les dix premiers.</p>
+      <p>Au-delà de six ou sept teintes, nous ne distinguons plus les artistes, encore moins en
+        vision altérée. Et ces dix artistes ne couvrent que 16 % de l'écoute.</p>
+    </article>
+
+    <article class="variante retenue">
+      <p class="etiquette">Retenue</p>
+      <h3>B. Classement et trois artistes suivis</h3>
+      <svg id="classement" viewBox="0 0 400 260" role="img" aria-label="Liste classée avec barres fines et trois pastilles numérotées"></svg>
+      <p>Encodage : liste classée par temps d'écoute dans la sélection, barres fines en longueur.
+        Un clic suit un artiste et lui donne l'une des trois couleurs, reprises sur la carte et
+        dans la légende ; tous les autres restent gris.</p>
+      <p>La couleur reste attachée à l'artiste quand le classement change. Le nom est toujours
+        écrit à côté de sa pastille.</p>
+    </article>
+  </div>
+
+  <script src="maquettes.js"></script>
+  <script>
+    const { C, el, fondCarte, lieux } = M
+    const DIX = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf']
+
+    // A. Dix teintes catégorielles (la seule maquette qui sort du gris, pour montrer le problème)
+    {
+      const s = document.getElementById('dix-couleurs')
+      fondCarte(s)
+      for (const l of lieux()) el(s, 'circle', { cx: l.x, cy: l.y, r: Math.sqrt(l.heures) * 1.5, fill: DIX[l.artiste], opacity: 0.85 })
+      DIX.forEach((couleur, i) => {
+        const x = 12 + (i % 5) * 76
+        const y = i < 5 ? 14 : 30
+        el(s, 'circle', { cx: x, cy: y - 3, r: 4, fill: couleur })
+        el(s, 'text', { x: x + 8, y, 'font-size': 9, fill: C.texte }, `Artiste ${i + 1}`)
+      })
+    }
+
+    // B. Classement, trois emplacements de couleur
+    {
+      const s = document.getElementById('classement')
+      const heures = [62, 55, 41, 38, 30, 27, 22, 19, 17, 15]
+      const suivis = { 0: 1, 2: 2, 5: 3 }
+      heures.forEach((h, i) => {
+        const y = 22 + i * 23
+        const emplacement = suivis[i]
+        if (emplacement) {
+          el(s, 'circle', { cx: 18, cy: y - 4, r: 7, fill: C.accent, opacity: [1, 0.65, 0.4][emplacement - 1] })
+          el(s, 'text', { x: 18, y: y - 1, 'font-size': 8, fill: '#fff', 'text-anchor': 'middle' }, emplacement)
+        } else {
+          el(s, 'circle', { cx: 18, cy: y - 4, r: 5, fill: 'none', stroke: C.clair })
+        }
+        el(s, 'text', { x: 34, y, 'font-size': 11, fill: '#222' }, `Artiste ${i + 1}`)
+        el(s, 'rect', { x: 130, y: y - 7, width: h * 3.4, height: 4, fill: C.marque })
+        el(s, 'text', { x: 392, y, 'font-size': 10, fill: C.texte, 'text-anchor': 'end' }, `${h} h`)
+      })
+      el(s, 'text', { x: 130, y: 254, 'font-size': 9, fill: C.accent }, 'clic : suivre ou ne plus suivre (trois au maximum)')
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Maquettes · Carte</title>
+  <link rel="stylesheet" href="maquettes.css" />
+</head>
+<body>
+  <nav>
+    <a href="index.html">Vue d'ensemble</a>
+    <a href="carte.html" aria-current="page">Carte</a>
+    <a href="horloge.html">Horloge</a>
+    <a href="contextes.html">Contextes</a>
+    <a href="artistes.html">Artistes</a>
+    <a href="frise.html">Frise</a>
+  </nav>
+
+  <h1>Carte</h1>
+  <p class="intro">
+    Tâche : repérer les lieux qui ont une signature musicale, puis suivre ce qui joue pendant les
+    trajets. La carte occupe tout l'écran, les autres vues flottent par-dessus.
+  </p>
+
+  <h2>Lieux</h2>
+  <div class="variantes">
+    <article class="variante">
+      <p class="etiquette">Écartée</p>
+      <h3>A. Carte de chaleur</h3>
+      <svg id="lieux-chaleur" viewBox="0 0 400 260" role="img" aria-label="Taches floues de densité d'écoute"></svg>
+      <p>Encodage : densité d'écoute lissée sur l'espace.</p>
+      <p>Les lieux voisins fusionnent en une tache continue et nous ne savons plus lequel compte.
+        Un quartier entier paraît écouté alors que seuls deux bâtiments le sont.</p>
+    </article>
+
+    <article class="variante">
+      <p class="etiquette">Écartée</p>
+      <h3>B. Camemberts par lieu</h3>
+      <svg id="lieux-camemberts" viewBox="0 0 400 260" role="img" aria-label="Petits camemberts répartissant les artistes par lieu"></svg>
+      <p>Encodage : taille = temps d'écoute, parts = artistes du lieu.</p>
+      <p>Comparer des angles entre des dizaines de petits disques est trop imprécis, et les parts
+        deviennent illisibles sous 10 px.</p>
+    </article>
+
+    <article class="variante retenue">
+      <p class="etiquette">Retenue</p>
+      <h3>C. Halos</h3>
+      <svg id="lieux-halos" viewBox="0 0 400 260" role="img" aria-label="Disques entourés d'un halo, aire proportionnelle au temps d'écoute"></svg>
+      <p>Encodage : aire du disque proportionnelle au temps d'écoute ; couleur de l'artiste dominant
+        (un artiste suivi en couleur, les autres en gris). Une seconde lentille colore par heure moyenne.</p>
+      <p>Chaque lieu garde son identité. Le survol donne la valeur exacte, ce qui compense la
+        sous-estimation des aires.</p>
+    </article>
+  </div>
+
+  <h2>Trajets</h2>
+  <div class="variantes">
+    <article class="variante">
+      <p class="etiquette">Écartée</p>
+      <h3>A. Lignes fixes</h3>
+      <svg id="trajets-lignes" viewBox="0 0 400 260" role="img" aria-label="Trajets en lignes grises"></svg>
+      <p>Encodage : tracé GPS en gris.</p>
+      <p>Le tracé montre où l'on passe, sans dire ce qui joue ni à quelle heure.</p>
+    </article>
+
+    <article class="variante retenue">
+      <p class="etiquette">Retenue</p>
+      <h3>B. Comètes</h3>
+      <svg id="trajets-cometes" viewBox="0 0 400 260" role="img" aria-label="Trajets animés, colorés par morceau, avec une traîne"></svg>
+      <p>Encodage : la couleur change à chaque morceau, la traîne s'efface avec le temps. Tous les
+        trajets rejouent une journée type sur 24 h ; en replay d'un jour, la trace reste peinte.</p>
+      <p>Les comètes qui partent ensemble se lisent comme un groupe : les heures de pointe
+        apparaissent sans autre graphique. Pause, vitesse et traces fixes restent disponibles.</p>
+    </article>
+  </div>
+
+  <script src="maquettes.js"></script>
+  <script>
+    const { C, el, secteur, chemin, fondCarte, lieux, trajets } = M
+    const LIEUX = lieux()
+    const TRAJETS = trajets()
+    const rayon = (heures) => Math.sqrt(heures) * 1.5
+    const svg = (id) => document.getElementById(id)
+
+    // A. Carte de chaleur
+    {
+      const s = svg('lieux-chaleur')
+      fondCarte(s)
+      const degrade = el(el(s, 'defs'), 'radialGradient', { id: 'tache' })
+      el(degrade, 'stop', { offset: 0, 'stop-color': C.marque, 'stop-opacity': 0.45 })
+      el(degrade, 'stop', { offset: 1, 'stop-color': C.marque, 'stop-opacity': 0 })
+      for (const l of LIEUX) el(s, 'circle', { cx: l.x, cy: l.y, r: 16 + rayon(l.heures) * 1.4, fill: 'url(#tache)' })
+    }
+
+    // B. Camemberts
+    {
+      const s = svg('lieux-camemberts')
+      fondCarte(s)
+      const teintes = [C.marque, C.clair, C.pale]
+      for (const l of LIEUX) {
+        const poids = [1 + (l.artiste % 3), 2, 1.5]
+        const total = poids.reduce((a, b) => a + b, 0)
+        let angle = 0
+        poids.forEach((p, i) => {
+          const fin = angle + (p / total) * 2 * Math.PI
+          el(s, 'path', { d: secteur(l.x, l.y, 0, rayon(l.heures), angle, fin), fill: teintes[i], stroke: '#fff', 'stroke-width': 0.6 })
+          angle = fin
+        })
+      }
+    }
+
+    // C. Halos, avec une légende des aires
+    {
+      const s = svg('lieux-halos')
+      fondCarte(s)
+      for (const l of LIEUX) {
+        const couleur = l.artiste === 0 ? C.accent : C.marque
+        el(s, 'circle', { cx: l.x, cy: l.y, r: rayon(l.heures) * 2.2, fill: couleur, opacity: 0.1 })
+        el(s, 'circle', { cx: l.x, cy: l.y, r: rayon(l.heures), fill: couleur, opacity: 0.75 })
+      }
+      ;[10, 100].forEach((h, i) => {
+        const x = 330 + i * 34
+        el(s, 'circle', { cx: x, cy: 236 - rayon(h), r: rayon(h), fill: 'none', stroke: C.marque })
+        el(s, 'text', { x, y: 252, 'font-size': 9, fill: C.texte, 'text-anchor': 'middle' }, `${h} h`)
+      })
+    }
+
+    // Trajets A. Lignes fixes
+    {
+      const s = svg('trajets-lignes')
+      fondCarte(s)
+      for (const t of TRAJETS) el(s, 'path', { d: chemin(t), fill: 'none', stroke: C.marque, 'stroke-width': 1.5, opacity: 0.6 })
+    }
+
+    // Trajets B. Comètes : trace fixe pâle, puis traîne colorée par morceau
+    {
+      const s = svg('trajets-cometes')
+      fondCarte(s)
+      const morceau = (i) => (Math.floor(i / 3) % 2 ? C.marque : C.accent)
+      TRAJETS.forEach((t, k) => {
+        el(s, 'path', { d: chemin(t), fill: 'none', stroke: C.clair, 'stroke-width': 1 })
+        const tete = Math.min(12, 6 + k)
+        const debut = Math.max(0, tete - 6)
+        for (let i = debut; i < tete; i++) {
+          el(s, 'line', {
+            x1: t[i].x, y1: t[i].y, x2: t[i + 1].x, y2: t[i + 1].y,
+            stroke: morceau(i), 'stroke-width': 2.6, 'stroke-linecap': 'round',
+            opacity: (0.25 + (0.75 * (i - debut + 1)) / (tete - debut)).toFixed(2),
+          })
+        }
+        el(s, 'circle', { cx: t[tete].x, cy: t[tete].y, r: 3.5, fill: morceau(tete - 1) })
+      })
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Maquettes · Vue d'ensemble</title>
+  <link rel="stylesheet" href="maquettes.css" />
+</head>
+<body>
+  <nav>
+    <a href="index.html" aria-current="page">Vue d'ensemble</a>
+    <a href="carte.html">Carte</a>
+    <a href="horloge.html">Horloge</a>
+    <a href="contextes.html">Contextes</a>
+    <a href="artistes.html">Artistes</a>
+    <a href="frise.html">Frise</a>
+  </nav>
+
+  <h1>Maquettes de Nocturne</h1>
+  <p class="intro">
+    Nous dessinons chaque vue avant de la coder. Pour chacune, nous comparons deux ou trois
+    variantes avec la grille de <code>notebooks/00-principes.py</code> et gardons celle qui sert le
+    mieux sa tâche (voir <a href="../CADRAGE.md">CADRAGE.md</a>). Les données sont inventées.
+  </p>
+
+  <h2>L'écran</h2>
+  <p class="intro">
+    La carte remplit l'écran. Les autres vues sont posées dessus, sur un fond translucide, pour ne
+    jamais imbriquer une carte dans un cadre. Les numéros mènent aux variantes.
+  </p>
+  <svg class="ecran" id="ecran" viewBox="0 0 1440 900" role="img" aria-label="Schéma de l'écran complet" style="margin-top:16px"></svg>
+
+  <h2>Les vues</h2>
+  <ol class="pages">
+    <li>En-tête : cinq indicateurs (heures écoutées, écoutes, part en mouvement, morceaux passés,
+      artistes), qui suivent les filtres, et le choix de la lentille de couleur.</li>
+    <li><a href="carte.html">Carte</a> : lieux en halos, trajets en comètes.</li>
+    <li><a href="horloge.html">Horloge</a> : rythme heure × jour et part en mouvement.</li>
+    <li><a href="contextes.html">Contextes</a> : en mouvement ou à l'arrêt.</li>
+    <li><a href="artistes.html">Artistes</a> : classement et artistes suivis.</li>
+    <li><a href="frise.html">Frise</a> : période, replay d'un jour, voyages.</li>
+  </ol>
+
+  <h2>Liens entre les vues</h2>
+  <p class="intro">
+    Une sélection dans une vue filtre toutes les autres : période sur la frise, lieu sur la carte,
+    contexte, artiste. Chaque filtre actif apparaît dans une puce qu'un clic supprime. Une vue
+    ignore son propre filtre pour continuer à montrer les autres choix possibles. Le bouton
+    « Méthode » ouvre un panneau sur les sources, la jointure et les limites.
+  </p>
+
+  <script src="maquettes.js"></script>
+  <script>
+    const { C, el, secteur } = M
+    const s = document.getElementById('ecran')
+    const verre = { fill: '#fff', 'fill-opacity': 0.82, stroke: C.trait, rx: 14 }
+    const texte = (x, y, contenu, attrs = {}) => el(s, 'text', { x, y, fill: C.texte, 'font-size': 18, ...attrs }, contenu)
+    const barre = (x, y, l, h = 10) => el(s, 'rect', { x, y, width: l, height: h, rx: 3, fill: C.pale })
+
+    // Carte en fond
+    el(s, 'rect', { width: 1440, height: 900, fill: C.fond })
+    el(s, 'path', { d: 'M260 640 C 360 560, 420 600, 520 560 S 640 520, 700 470', fill: 'none', stroke: C.trait, 'stroke-width': 26, 'stroke-linecap': 'round' })
+    el(s, 'path', { d: 'M0 300 L 220 280 L 480 320 L 760 230 L 1040 260', fill: 'none', stroke: C.trait, 'stroke-width': 2, 'stroke-dasharray': '10 8' })
+    for (const [x, y, r] of [[500, 380, 60], [470, 360, 26], [540, 410, 18], [620, 330, 12], [350, 520, 14], [760, 300, 10], [590, 470, 9]]) {
+      el(s, 'circle', { cx: x, cy: y, r: r * 1.8, fill: C.marque, opacity: 0.08 })
+      el(s, 'circle', { cx: x, cy: y, r: r * 0.6, fill: C.marque, opacity: 0.6 })
+    }
+    el(s, 'path', { d: 'M500 380 C 560 340, 640 320, 760 300', fill: 'none', stroke: C.accent, 'stroke-width': 3 })
+    el(s, 'path', { d: 'M500 380 C 440 450, 380 500, 350 520', fill: 'none', stroke: C.marque, 'stroke-width': 3 })
+
+    // 1. En-tête
+    texte(30, 40, 'SPOTIFY × GOOGLE MAPS TIMELINE', { 'font-size': 13, 'letter-spacing': 2 })
+    texte(30, 100, 'Nocturne', { 'font-size': 56, fill: '#222', 'font-family': 'Georgia, serif' })
+    texte(30, 132, 'La bande-son de ma géographie · oct. 2021 – oct. 2026', { 'font-size': 16, 'font-style': 'italic' })
+    ;['h écoutées', 'écoutes', 'en mouvement', 'passés', 'artistes'].forEach((libelle, i) => {
+      el(s, 'rect', { x: 30 + i * 112, y: 156, width: 70, height: 22, rx: 4, fill: C.clair })
+      texte(30 + i * 112, 198, libelle, { 'font-size': 13 })
+    })
+    el(s, 'rect', { x: 30, y: 216, width: 190, height: 34, rx: 17, fill: '#fff', stroke: C.trait })
+    el(s, 'rect', { x: 33, y: 219, width: 84, height: 28, rx: 14, fill: C.pale })
+    texte(48, 239, 'Artistes', { 'font-size': 14 })
+    texte(128, 239, 'Nuit ↔ jour', { 'font-size': 14 })
+    el(s, 'rect', { x: 230, y: 216, width: 86, height: 34, rx: 17, fill: '#fff', stroke: C.trait })
+    texte(246, 239, 'Méthode', { 'font-size': 14 })
+
+    // Rail de droite : horloge, contextes, artistes, voyages
+    el(s, 'rect', { x: 1040, y: 20, width: 380, height: 670, ...verre })
+    texte(1064, 60, "Horloge d'écoute", { 'font-size': 20, fill: '#222' })
+    for (let j = 0; j < 7; j++) el(s, 'circle', { cx: 1230, cy: 200, r: 30 + j * 12, fill: 'none', stroke: C.clair })
+    for (let h = 0; h < 24; h++) {
+      el(s, 'path', { d: secteur(1230, 200, 120, 120 + 8 + 10 * Math.abs(Math.sin(h / 3)), (h * Math.PI) / 12 + 0.04, ((h + 1) * Math.PI) / 12 - 0.04), fill: C.accent, opacity: 0.8 })
+    }
+    texte(1064, 370, "En mouvement ou à l'arrêt ?", { 'font-size': 20, fill: '#222' })
+    for (let i = 0; i < 4; i++) {
+      barre(1064, 392 + i * 22, 60)
+      for (let k = 0; k < 3; k++) el(s, 'circle', { cx: 1170 + k * 80 + ((i * 13 + k * 7) % 30), cy: 397 + i * 22, r: 5, fill: C.marque })
+    }
+    texte(1064, 510, 'Artistes', { 'font-size': 20, fill: '#222' })
+    for (let i = 0; i < 4; i++) {
+      el(s, 'circle', { cx: 1070, cy: 530 + i * 20, r: 5, fill: i < 2 ? C.accent : 'none', stroke: C.clair })
+      barre(1084, 525 + i * 20, 80)
+      el(s, 'rect', { x: 1190, y: 528 + i * 20, width: 180 - i * 35, height: 4, fill: C.marque })
+    }
+    texte(1064, 630, 'Voyages', { 'font-size': 20, fill: '#222' })
+    for (let i = 0; i < 2; i++) barre(1064, 645 + i * 18, 260 - i * 60)
+
+    // 6. Frise en bas
+    el(s, 'rect', { x: 16, y: 710, width: 1408, height: 174, ...verre })
+    el(s, 'circle', { cx: 52, cy: 745, r: 17, fill: C.pale })
+    texte(84, 751, '×0,5   ×1   ×2     07:59   à cette heure, le plus souvent : …', { 'font-size': 15 })
+    for (const [x, l] of [[140, 10], [250, 24], [520, 10], [1010, 14], [1150, 8], [1340, 16]]) el(s, 'rect', { x, y: 765, width: l, height: 8, rx: 2, fill: C.clair })
+    let contour = 'M36 840'
+    for (let x = 36; x <= 1404; x += 12) contour += ` L${x} ${830 - 18 - 14 * Math.abs(Math.sin(x / 37)) - 8 * Math.abs(Math.sin(x / 9))}`
+    el(s, 'path', { d: `${contour} L1404 840 Z`, fill: C.pale, stroke: C.marque })
+    el(s, 'rect', { x: 36, y: 846, width: 588, height: 7, fill: C.marque, opacity: 0.6 })
+    el(s, 'rect', { x: 624, y: 846, width: 316, height: 7, fill: 'none', stroke: C.clair, 'stroke-dasharray': '3 3' })
+    el(s, 'rect', { x: 940, y: 846, width: 464, height: 7, fill: C.marque, opacity: 0.35 })
+    texte(782, 870, 'Timeline perdue', { 'font-size': 13, 'text-anchor': 'middle' })
+
+    // Repères numérotés, chacun mène à sa page de variantes
+    const reperes = [
+      [1, 360, 60, null],
+      [2, 660, 420, 'carte.html'],
+      [3, 1390, 60, 'horloge.html'],
+      [4, 1390, 365, 'contextes.html'],
+      [5, 1390, 505, 'artistes.html'],
+      [6, 1400, 735, 'frise.html'],
+    ]
+    for (const [n, x, y, lien] of reperes) {
+      const parent = lien ? el(s, 'a', { href: lien }) : s
+      el(parent, 'circle', { cx: x, cy: y, r: 16, fill: C.accent })
+      el(parent, 'text', { x, y: y + 6, 'font-size': 17, 'font-weight': 700, fill: '#fff', 'text-anchor': 'middle' }, n)
+    }
+  </script>
+</body>
+</html>
