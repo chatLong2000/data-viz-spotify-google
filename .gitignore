@@ -1,5 +1,30 @@
+# Exports personnels (Spotify, Google Timeline) : jamais dans le dépôt
 data/
-.DS_Store
+
+# Agrégats générés par scripts/build_data.py : ils restent locaux,
+# on ne les publie qu'après `npm run audit`
+app/public/data/
+
+# Ancienne version du projet, gardée en local comme référence
+projet/
+
+# Python
 .venv/
 __pycache__/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Notebooks marimo
 __marimo__/
+
+# App
+node_modules/
+dist/
+coverage/
+test-results/
+playwright-report/
+
+.env*
+.DS_Store
